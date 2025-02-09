@@ -19,7 +19,7 @@ def run_script(script, args:List[str]):
     subprocess.run(cmd)
 
 
-NEMO_ROOT_DIR = Path('/home/antonio/Documents/Mestrado/NeMo')
+NEMO_ROOT_DIR = Path(os.getenv("NEMO_HOME_DIR"))
 DATA_ROOT = NEMO_ROOT_DIR/'data'
 DATA_DIR = DATA_ROOT/'cml-portuguese'
 AUDIO_DIR = DATA_DIR/'audio'
