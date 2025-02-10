@@ -411,10 +411,10 @@ def pipeline():
     feature_statistics()
 
     #Hifi Traning
-    #hifigan_exp_output_dir = hifi_gan_training()
+    hifigan_exp_output_dir = hifi_gan_training()
 
     #FastPitch Training
-    #fast_pitch_training("fast_run", hifigan_exp_output_dir)
+    fast_pitch_training("fast_run", hifigan_exp_output_dir)
     
 if __name__ == '__main__':
     pipeline()
