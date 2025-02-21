@@ -1,16 +1,18 @@
 import os
 import json
 import torch
+import logging
 import subprocess
 from pathlib import Path
 from typing import List
-
 
 import numpy as np  
 from scipy.io import wavfile
 from datasets import load_dataset, DatasetDict
 
 from nemo.collections.asr.parts.utils.manifest_utils import read_manifest, write_manifest
+
+Logger = logging.getLogger()
 
 os.environ["HYDRA_FULL_ERROR"] = "1"
 
@@ -62,7 +64,7 @@ def ensure_folders():
 
 def create_manifest(dataset:DatasetDict, split:str):
     with open(DATA_DIR/f'{split}.json', 'w') as f:
-        for sample in dataset[split].select(range(10)):
+        for sample in dataset[split]:
             audio = sample['audio'] # type: ignore
 
             ndarray_to_wav(
@@ -73,6 +75,9 @@ def create_manifest(dataset:DatasetDict, split:str):
             )
 
             # {"audio_filepath": str, "duration": float, "text": str, "speaker": 225}
+
+            if sample
+
             json.dump({
                 "audio_filepath": audio['path'],
                 "duration": sample['duration'], # type: ignore
@@ -367,7 +372,7 @@ def fast_pitch_training(run_id: str, hifigan_exp_output_dir:Path):
         f"feature_stats_path={stats_path}",
         f"log_dir={fastpitch_log_dir}",
         f"vocoder_type={vocoder_type}",
-        f"vocoder_checkpoint_path=\\'{vocoder_checkpoint_path}\\'",
+        f"vocoder_checkpoint_path='{vocoder_checkpoint_path}'",
         f"trainer.accelerator={accelerator}",
         f"exp_manager.exp_dir={exp_dir}",
         f"+exp_manager.version={run_id}",
@@ -391,6 +396,8 @@ def pipeline():
     #Create Manifest
     create_manifest(cml_ds, 'train') # type: ignore
     create_manifest(cml_ds, 'dev') # type: ignore
+
+    return
 
     #Update Manifest
     update_metadata("dev")
