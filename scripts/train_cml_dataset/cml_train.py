@@ -312,7 +312,12 @@ def fast_pitch_training(run_id: str, hifigan_exp_output_dir:Path):
     epochs = 10
     steps_per_epoch = 10
 
-    num_speakers = 11
+    with open(DATA_DIR/'speakers.json', 'r') as f:
+        speakers = json.load(f)
+        assert isinstance(speakers, dict)
+        print(f">>>>> Number of Speakers: {len(speakers)}")
+
+    num_speakers = len(speakers)
     sample_rate = 22050
 
     # Config files specifying all FastPitch parameters
@@ -359,7 +364,7 @@ def fast_pitch_training(run_id: str, hifigan_exp_output_dir:Path):
 
     if torch.cuda.is_available():
         accelerator="gpu"
-        batch_size = 8
+        batch_size = 2
     else:
         accelerator="cpu"
         batch_size = 4
@@ -397,30 +402,30 @@ def pipeline():
     cml_ds = load_dataset("ylacombe/cml-tts", "portuguese")
     ensure_folders()
 
-    #Create Manifest
-    create_manifest(cml_ds, 'train') # type: ignore
-    create_manifest(cml_ds, 'dev') # type: ignore
+    # #Create Manifest
+    # create_manifest(cml_ds, 'train') # type: ignore
+    # create_manifest(cml_ds, 'dev') # type: ignore
 
-    #Update Manifest
-    update_metadata("dev")
-    update_metadata("train")
+    # #Update Manifest
+    # update_metadata("dev")
+    # update_metadata("train")
 
-    #Audio Processing
-    audio_processing("dev")
-    audio_processing("train")
+    # #Audio Processing
+    # audio_processing("dev")
+    # audio_processing("train")
 
-    #Speaker Mapping
-    speaker_mapping()
+    # #Speaker Mapping
+    # speaker_mapping()
 
-    #Feature Computation
-    feature_computation("dev")
-    feature_computation("train")
+    # #Feature Computation
+    # feature_computation("dev")
+    # feature_computation("train")
 
-    #Feature Statistcs
-    feature_statistics()
+    # #Feature Statistcs
+    # feature_statistics()
 
     #Hifi Traning
-    hifigan_exp_output_dir = Path("/home/antonio/models/hifigan/tts_hifigan.nemo")
+    hifigan_exp_output_dir = Path("/home/antonio/models/hifigan/")
 
     #FastPitch Training
     fast_pitch_training("fast_run", hifigan_exp_output_dir)
