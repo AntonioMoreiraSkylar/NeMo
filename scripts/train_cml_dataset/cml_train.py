@@ -10,6 +10,7 @@ import numpy as np
 from scipy.io import wavfile
 from datasets import load_dataset, DatasetDict
 
+from nemo.collections.tts.models import HifiGanModel
 from nemo.collections.asr.parts.utils.manifest_utils import read_manifest, write_manifest
 
 Logger = logging.getLogger()
@@ -21,7 +22,7 @@ def run_script(script, args:List[str]):
     subprocess.run(cmd)
 
 
-NEMO_ROOT_DIR = Path(os.getenv("NEMO_HOME_DIR"))
+NEMO_ROOT_DIR = Path(os.getenv("NEMO_ROOT_DIR"))
 DATA_ROOT = NEMO_ROOT_DIR/'data'
 DATA_DIR = DATA_ROOT/'cml-portuguese'
 AUDIO_DIR = DATA_DIR/'audio'
@@ -64,7 +65,7 @@ def ensure_folders():
 
 def create_manifest(dataset:DatasetDict, split:str):
     with open(DATA_DIR/f'{split}.json', 'w') as f:
-        for sample in dataset[split]:
+        for sample in dataset[split].select(range(20)):
             audio = sample['audio'] # type: ignore
 
             ndarray_to_wav(
@@ -76,7 +77,11 @@ def create_manifest(dataset:DatasetDict, split:str):
 
             # {"audio_filepath": str, "duration": float, "text": str, "speaker": 225}
 
-            if sample
+            try:
+                sample_text = sample['text'].lower()
+            except AttributeError:
+                print(sample)
+                continue
 
             json.dump({
                 "audio_filepath": audio['path'],
@@ -115,7 +120,7 @@ def audio_processing(data_type:str):
     # Number of threads to parallelize audio processing across
     num_workers = 4
     # Downsample data from 48khz to 44.1khz for compatibility
-    output_sample_rate = 44100
+    output_sample_rate = 22050
     # Format of output audio files. Use "flac" to compress to a smaller file size.
     output_format = "flac"
     # Method for silence trimming. Can use "energy.yaml" or "vad.yaml".
@@ -175,7 +180,7 @@ def speaker_mapping():
 def feature_computation(data_type:str):
     feature_script = NEMO_SCRIPT_DIR / "compute_features.py"
 
-    sample_rate = 44100
+    sample_rate = 22050
 
     if sample_rate == 22050:
         feature_config_filename = "feature_22050.yaml"
@@ -209,7 +214,7 @@ def feature_statistics():
     dev_manifest_filepath = DATA_DIR / "dev_manifest.json"
     output_stats_path = DATA_DIR / "feature_stats.json"
 
-    sample_rate = 44100
+    sample_rate = 22050
 
     if sample_rate == 22050:
         feature_config_filename = "feature_22050.yaml"
@@ -235,7 +240,6 @@ def feature_statistics():
 
     run_script(feature_stats_script, args)
 
-
 def hifi_gan_training():
     dataset_name = "cml"
     audio_dir = DATA_DIR / "audio_preprocessed"
@@ -248,7 +252,7 @@ def hifi_gan_training():
     epochs = 10
     steps_per_epoch = 10
 
-    sample_rate = 44100
+    sample_rate = 22050
 
     # Config files specifying all HiFi-GAN parameters
     hifigan_config_dir = NEMO_CONFIG_DIR / "hifigan_dataset"
@@ -309,7 +313,7 @@ def fast_pitch_training(run_id: str, hifigan_exp_output_dir:Path):
     steps_per_epoch = 10
 
     num_speakers = 11
-    sample_rate = 44100
+    sample_rate = 22050
 
     # Config files specifying all FastPitch parameters
     fastpitch_config_dir = NEMO_CONFIG_DIR / "fastpitch"
@@ -397,8 +401,6 @@ def pipeline():
     create_manifest(cml_ds, 'train') # type: ignore
     create_manifest(cml_ds, 'dev') # type: ignore
 
-    return
-
     #Update Manifest
     update_metadata("dev")
     update_metadata("train")
@@ -418,7 +420,7 @@ def pipeline():
     feature_statistics()
 
     #Hifi Traning
-    hifigan_exp_output_dir = hifi_gan_training()
+    hifigan_exp_output_dir = Path("/home/antonio/models/hifigan/tts_hifigan.nemo")
 
     #FastPitch Training
     fast_pitch_training("fast_run", hifigan_exp_output_dir)
