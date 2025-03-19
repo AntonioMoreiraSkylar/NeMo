@@ -23,6 +23,7 @@ def run_script(script, args:List[str]):
 
 
 NEMO_ROOT_DIR = Path(os.getenv("NEMO_ROOT_DIR"))
+#DATA_ROOT = Path("/mnt/fs/amoreira/data/cml-portuguese/exps/HifiGan/test_run/")
 DATA_ROOT = NEMO_ROOT_DIR/'data'
 DATA_DIR = DATA_ROOT/'cml-portuguese'
 AUDIO_DIR = DATA_DIR/'audio'
@@ -402,27 +403,27 @@ def pipeline():
     cml_ds = load_dataset("ylacombe/cml-tts", "portuguese")
     ensure_folders()
 
-    # #Create Manifest
-    # create_manifest(cml_ds, 'train') # type: ignore
-    # create_manifest(cml_ds, 'dev') # type: ignore
+    #Create Manifest
+    create_manifest(cml_ds, 'train') # type: ignore
+    create_manifest(cml_ds, 'dev') # type: ignore
 
-    # #Update Manifest
-    # update_metadata("dev")
-    # update_metadata("train")
+    #Update Manifest
+    update_metadata("dev")
+    update_metadata("train")
 
-    # #Audio Processing
-    # audio_processing("dev")
-    # audio_processing("train")
+    #Audio Processing
+    audio_processing("dev")
+    audio_processing("train")
 
-    # #Speaker Mapping
-    # speaker_mapping()
+    #Speaker Mapping
+    speaker_mapping()
 
-    # #Feature Computation
-    # feature_computation("dev")
-    # feature_computation("train")
+    #Feature Computation
+    feature_computation("dev")
+    feature_computation("train")
 
-    # #Feature Statistcs
-    # feature_statistics()
+    #Feature Statistcs
+    feature_statistics()
 
     #Hifi Traning
     hifigan_exp_output_dir = Path("/home/antonio/models/hifigan/")
