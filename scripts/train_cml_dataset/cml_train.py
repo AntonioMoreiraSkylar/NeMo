@@ -24,7 +24,7 @@ def run_script(script, args:List[str]):
 
 NEMO_ROOT_DIR = Path(os.getenv("NEMO_ROOT_DIR"))
 #DATA_ROOT = Path("/mnt/fs/amoreira/data/cml-portuguese/exps/HifiGan/test_run/")
-DATA_ROOT = NEMO_ROOT_DIR/'data'
+DATA_ROOT = Path(os.getenv("DATA_ROOT"))
 DATA_DIR = DATA_ROOT/'cml-portuguese'
 AUDIO_DIR = DATA_DIR/'audio'
 
@@ -32,6 +32,9 @@ NEMO_DIR = Path(NEMO_ROOT_DIR)
 NEMO_EXAMPLES_DIR = NEMO_DIR / "examples" / "tts"
 NEMO_CONFIG_DIR = NEMO_EXAMPLES_DIR / "conf"
 NEMO_SCRIPT_DIR = NEMO_DIR / "scripts" / "dataset_processing" / "tts"
+
+PHONEMES_ENTOA = Path(__file__).parent.resolve() / 'entoa_tts_pros_333.txt'
+HETERONYMS_ENTOA = Path(__file__).parent.resolve() / 'heteronyms_entoa.txt'
 
 print(
     NEMO_DIR, 
@@ -41,8 +44,10 @@ print(
     sep='\n'
 )
 
-assert NEMO_DIR.exists() and NEMO_EXAMPLES_DIR.exists() and NEMO_CONFIG_DIR.exists() and NEMO_SCRIPT_DIR.exists(),\
-    'Required paths does not exists.'
+assert all((
+    NEMO_DIR.exists(), NEMO_EXAMPLES_DIR.exists(), NEMO_CONFIG_DIR.exists(),
+    NEMO_SCRIPT_DIR.exists(), DATA_ROOT.exists(), PHONEMES_ENTOA.exists(), HETERONYMS_ENTOA.exists(),
+    )), 'Required paths does not exists.'
 
 
 def ndarray_to_wav(array:np.ndarray, filename:str, filepath:Path, sample_rate:int) -> None:
@@ -119,7 +124,7 @@ def audio_processing(data_type:str):
     # Whether to overwrite output manifest, if it exists
     overwrite_manifest = True
     # Number of threads to parallelize audio processing across
-    num_workers = 4
+    num_workers = 32
     # Downsample data from 48khz to 44.1khz for compatibility
     output_sample_rate = 22050
     # Format of output audio files. Use "flac" to compress to a smaller file size.
@@ -193,7 +198,7 @@ def feature_computation(data_type:str):
     feature_config_path = NEMO_CONFIG_DIR / "feature" / feature_config_filename
     audio_dir = DATA_DIR / "audio_preprocessed"
     feature_dir = DATA_DIR / "features"
-    num_workers = 4
+    num_workers = 32
 
     input_filepath = DATA_DIR / f"{data_type}_manifest.json"
 
@@ -311,7 +316,7 @@ def fast_pitch_training(run_id: str, hifigan_exp_output_dir:Path):
 
     # The total number of training steps will be (epochs * steps_per_epoch)
     epochs = 10
-    steps_per_epoch = 10
+    steps_per_epoch = 40_000
 
     with open(DATA_DIR/'speakers.json', 'r') as f:
         speakers = json.load(f)
@@ -322,6 +327,7 @@ def fast_pitch_training(run_id: str, hifigan_exp_output_dir:Path):
     sample_rate = 22050
 
     # Config files specifying all FastPitch parameters
+    # NeMo/examples/tts/conf/fastpitch
     fastpitch_config_dir = NEMO_CONFIG_DIR / "fastpitch"
 
     if sample_rate == 22050:
@@ -333,8 +339,6 @@ def fast_pitch_training(run_id: str, hifigan_exp_output_dir:Path):
 
     # Metadata files and directories
     dataset_file_dir = NEMO_DIR / "scripts" / "tts_dataset_files"
-    phoneme_dict_path = dataset_file_dir / "ipa_cmudict-0.7b_nv23.01.txt"
-    heteronyms_path = dataset_file_dir / "heteronyms-052722"
 
     speaker_path = DATA_DIR / "speakers.json"
     feature_dir = DATA_DIR / "features"
@@ -365,7 +369,7 @@ def fast_pitch_training(run_id: str, hifigan_exp_output_dir:Path):
 
     if torch.cuda.is_available():
         accelerator="gpu"
-        batch_size = 2
+        batch_size = 32
     else:
         accelerator="cpu"
         batch_size = 4
@@ -377,8 +381,8 @@ def fast_pitch_training(run_id: str, hifigan_exp_output_dir:Path):
         f"speaker_path={speaker_path}",
         f"max_epochs={epochs}",
         f"weighted_sampling_steps_per_epoch={steps_per_epoch}",
-        f"phoneme_dict_path={phoneme_dict_path}",
-        f"heteronyms_path={heteronyms_path}",
+        f"phoneme_dict_path={PHONEMES_ENTOA}",
+        f"heteronyms_path={HETERONYMS_ENTOA}",
         f"feature_stats_path={stats_path}",
         f"log_dir={fastpitch_log_dir}",
         f"vocoder_type={vocoder_type}",

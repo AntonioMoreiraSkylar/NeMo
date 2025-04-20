@@ -15,9 +15,10 @@ from datasets import load_dataset, DatasetDict, Dataset
 # os.environ["HYDRA_FULL_ERROR"] = "1"
 # os.environ["OC_CAUSE"] = "1"
 
-NEMO_DIR = Path('/home/antonio/NeMo/')
-DATA_DIR = Path('/home/antonio/data/')
+NEMO_DIR = Path('/home/antonio/NeMo/') #/usr/src/app/
+DATA_DIR = Path('/home/antonio/data/') #/mnt/fs/data
 
+#FASTPITCH_PATH = Path("/mnt/fs/data/cml-portuguese-2/exps/FastPitch/fast_run/checkpoints/FastPitch.nemo")
 FASTPITCH_PATH = Path('/home/antonio/.cache/torch/NeMo/NeMo_2.1.0/tts_en_fastpitch_align/b7d086a07b5126c12d5077d9a641a38c/tts_en_fastpitch_align.nemo')
 FINETUNING_SCRIPT_PATH = NEMO_DIR / 'examples' / 'tts' / 'fastpitch_finetune.py'
 CONFIG_TTS_PATH = NEMO_DIR / 'examples' / 'tts' / 'conf' / 'fastpitch_align_v1.05.yaml'
@@ -28,6 +29,7 @@ VALIDATION_DATASET_PATH = DATA_DIR / '9017_manifest_dev_ns_all_local.json'
 SUP_DATA_PATH = DATA_DIR / 'fastpitch_sup_data/'
 EXP_MANAGER_DIR = DATA_DIR / 'ljspeech_to_9017_no_mixing_5_mins'
 
+# CMU_DICT_PATH = NEMO_DIR / 'scripts' / 'tts_dataset_files' / 'ipa_cmudict-0.7b_nv23.01.txt'
 CMU_DICT_PATH = NEMO_DIR / 'scripts' / 'tts_dataset_files' / 'cmudict-0.7b_nv22.10'
 HETERONYMS_PATH = NEMO_DIR / 'scripts' / 'tts_dataset_files' / 'heteronyms-052722'
 
@@ -43,6 +45,7 @@ assert all([
     HETERONYMS_PATH.exists(),
 ])
 
+# AUDIO_ROOT_PATH = Path('/mnt/fs/entoa/')
 AUDIO_ROOT_PATH = Path("/home/antonio/entoa_prosodic/")
 COMMON_SPEAKERS = {
     'SP_D2_255_TB-DOC1',
@@ -86,13 +89,13 @@ COMMON_SPEAKERS = {
 entoa_prosodic_ds = load_dataset("nilc-nlp/NURC-SP_ENTOA_TTS", name="prosodic", trust_remote_code=True)
 
 # Python wrapper to invoke the given bash script with the given input args
-def run_script(script, args):
-    args = ' \\'.join(args)
-    cmd = f"python {script} \\{args}"
+# def run_script(script, args):
+#     args = ' \\'.join(args)
+#     cmd = f"python {script} \\{args}"
 
-    print(cmd.replace(" \\", "\n"))
-    print()
-    !$cmd #type: ignore
+#     print(cmd.replace(" \\", "\n"))
+#     print()
+#     !$cmd #type: ignore
 
 
 def filter_dataset_by_speaker(dataset:Dataset, speaker_id:str) -> Dataset:
