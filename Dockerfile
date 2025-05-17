@@ -5,7 +5,7 @@ COPY . .
 
 ENV PYTHONUNBUFFERED=True
 ENV IMAGEIO_FFMPEG_EXE=ffmpeg
-ENV NEMO_HOME_DIR="/usr/src/app/"
+ENV NEMO_ROOT_DIR="/usr/src/app/"
 ENV DATA_ROOT='/mnt/fs/data/'
 ENV HYDRA_FULL_ERROR="1"
 ENV OC_CAUSE="1"
@@ -26,3 +26,5 @@ RUN pip install Cython packaging
 RUN pip install nemo_toolkit['tts']
 RUN pip install numpy==1.26.4 matplotlib==3.7.0
 RUN python scripts/train_cml_dataset/download_ds.py
+
+RUN apt update && apt upgrade -y

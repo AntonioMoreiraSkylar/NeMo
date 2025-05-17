@@ -36,6 +36,8 @@ NEMO_SCRIPT_DIR = NEMO_DIR / "scripts" / "dataset_processing" / "tts"
 PHONEMES_ENTOA = Path(__file__).parent.resolve() / 'entoa_tts_pros_333.txt'
 HETERONYMS_ENTOA = Path(__file__).parent.resolve() / 'heteronyms_entoa.txt'
 
+HIFI_GAN_PATH = Path("/home/antonio/models/hifigan/")
+
 print(
     NEMO_DIR, 
     NEMO_EXAMPLES_DIR,
@@ -44,10 +46,11 @@ print(
     sep='\n'
 )
 
-assert all((
+assert all((l:=(
     NEMO_DIR.exists(), NEMO_EXAMPLES_DIR.exists(), NEMO_CONFIG_DIR.exists(),
     NEMO_SCRIPT_DIR.exists(), DATA_ROOT.exists(), PHONEMES_ENTOA.exists(), HETERONYMS_ENTOA.exists(),
-    )), 'Required paths does not exists.'
+    HIFI_GAN_PATH.exists()
+    ))), f'Required paths does not exists.\n\t\t{l}'
 
 
 def ndarray_to_wav(array:np.ndarray, filename:str, filepath:Path, sample_rate:int) -> None:
@@ -71,7 +74,7 @@ def ensure_folders():
 
 def create_manifest(dataset:DatasetDict, split:str):
     with open(DATA_DIR/f'{split}.json', 'w') as f:
-        for sample in dataset[split].select(range(20)):
+        for sample in dataset[split].select(range(1000)):
             audio = sample['audio'] # type: ignore
 
             ndarray_to_wav(
@@ -124,7 +127,7 @@ def audio_processing(data_type:str):
     # Whether to overwrite output manifest, if it exists
     overwrite_manifest = True
     # Number of threads to parallelize audio processing across
-    num_workers = 32
+    num_workers = 4
     # Downsample data from 48khz to 44.1khz for compatibility
     output_sample_rate = 22050
     # Format of output audio files. Use "flac" to compress to a smaller file size.
@@ -198,7 +201,7 @@ def feature_computation(data_type:str):
     feature_config_path = NEMO_CONFIG_DIR / "feature" / feature_config_filename
     audio_dir = DATA_DIR / "audio_preprocessed"
     feature_dir = DATA_DIR / "features"
-    num_workers = 32
+    num_workers = 4
 
     input_filepath = DATA_DIR / f"{data_type}_manifest.json"
 
@@ -408,32 +411,39 @@ def pipeline():
     ensure_folders()
 
     #Create Manifest
+    print("\33[41m Creating Manifest...\33[0m")
     create_manifest(cml_ds, 'train') # type: ignore
     create_manifest(cml_ds, 'dev') # type: ignore
 
     #Update Manifest
+    print("\33[41m Updating Manifest...\33[0m")
     update_metadata("dev")
     update_metadata("train")
 
     #Audio Processing
+    print("\33[41m Audio Processing...\33[0m")
     audio_processing("dev")
     audio_processing("train")
 
     #Speaker Mapping
+    print("\33[41m Speaker Mapping...\33[0m")
     speaker_mapping()
 
     #Feature Computation
+    print("\33[41m Feature Computation...\33[0m")
     feature_computation("dev")
     feature_computation("train")
 
     #Feature Statistcs
+    print("\33[41m Feature Statistics...\33[0m")
     feature_statistics()
 
     #Hifi Traning
-    hifigan_exp_output_dir = Path("/home/antonio/models/hifigan/")
+    hifigan_exp_output_dir = HIFI_GAN_PATH
 
     #FastPitch Training
-    fast_pitch_training("fast_run", hifigan_exp_output_dir)
+    print("\33[41m FastPitch Training...\33[0m")
+    #fast_pitch_training("fast_run", hifigan_exp_output_dir)
     
 if __name__ == '__main__':
     pipeline()
